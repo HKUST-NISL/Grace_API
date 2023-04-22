@@ -46,9 +46,32 @@ Output specification:
             string audio_path   #Cached audio file path 
 
         Sample: (Note the revision of the word "see")
-        
+
             ![alt text](/word sample.png)
 
+
+
+(3) ASR Stream - Sentence: Incomplete sentence stream reported by the asr module of Grace published to a ros topic - note that this stream grows as the ASR module listens and make judgements.
+
+        Topic name: /hr/perception/hear/words
+
+        Message Type: hr_msgs/ChatMessage
+
+        Message Format:
+
+            string utterance    #This is the text string of the (incomplete) sentence 
+
+            string lang         #Language code
+
+            uint8 confidence    #Confidence level reported by ASR
+
+            string source       #Provider of the ASR service
+
+            string audio_path   #Cached audio file path 
+
+        Sample: (Note the revision of the word "see")
+
+            ![alt text](/interim speech.png)
 
 
 
