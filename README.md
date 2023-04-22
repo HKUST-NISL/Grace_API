@@ -2,9 +2,9 @@
 
 
 
-Output specification: 
+## Output specification: 
 
-(1) ASR Sentence: complete sentence reported by the asr module of Grace published to a ros topic 
+### (1) ASR Sentence: complete sentence reported by the asr module of Grace published to a ros topic 
 
         Topic name: /hr/perception/hear/sentence 
 
@@ -22,12 +22,11 @@ Output specification:
 
             string audio_path   #Cached audio file path 
 
-Sample: 
+Sample: \
+    ![sentence sample](/Images/sentence_sample.png)
 
-    ![sentence sample](./Images/sentence_sample.png) 
 
-
-(2) ASR Stream - Word: word stream reported by the asr module of Grace published to a ros topic - note that this stream could be unstable as ASR module is dynamically revising its judgements on words
+### (2) ASR Stream - Word: word stream reported by the asr module of Grace published to a ros topic - note that this stream could be unstable as ASR module is dynamically revising its judgements on words
 
         Topic name: /hr/perception/hear/words
 
@@ -45,13 +44,12 @@ Sample:
 
             string audio_path   #Cached audio file path 
 
-Sample: (Note the revision of the word "see")
-
-    ![word sample](./Images/word_sample.png)
-
+Sample: (Note the revision of the word "see")\
+    ![word sample](/Images/word_sample.png)
 
 
-(3) ASR Stream - Sentence: Incomplete sentence stream reported by the asr module of Grace published to a ros topic - note that this stream grows as the ASR module listens and make judgements.
+
+### (3) ASR Stream - Sentence: Incomplete sentence stream reported by the asr module of Grace published to a ros topic - note that this stream grows as the ASR module listens and make judgements.
 
         Topic name: /hr/perception/hear/words
 
@@ -69,10 +67,8 @@ Sample: (Note the revision of the word "see")
 
             string audio_path   #Cached audio file path 
 
-Sample: (Note the growing, incomplete sentence)
-
-    ![interim speech](./Images/interim_speech_sample.png)
-
+Sample: (Note the growing, incomplete sentence)\
+    ![interim speech](/Images/interim_speech_sample.png)
 
 
 
@@ -87,7 +83,8 @@ Sample: (Note the growing, incomplete sentence)
 
 
 
-Input specification:
+
+## Input specification:
 
 
 
