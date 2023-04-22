@@ -122,26 +122,7 @@ Note:
 
 
 
-
-
-
-### (5) Grace Behavior Change: Flags published to a ros topic upon the change of the behavior of Grace
-
-        Topic name: /grace_proj/grace_behavior_change
-
-        Message Type: std_msgs/String
-
-        Message Format:
-
-            string data #Text indicating what change just occurred
-
-Note: 
-    Possible state change of Grace: {"Speech Started", "Speech Stopped", "Speech Interrupted"}. In particular, upon the interruption of an on-going speech by her interlocutor, Grace will stop her speech, publish this state change flat, and wait for further commands.
-
-
-
-
-### (6) Flow Control Commands: Flags published to a ros topic by the GUI, which is operated by the developer to control the interaction.
+### (5) Flow Control Commands: Flags published to a ros topic by the GUI, which is operated by the developer to control the interaction.
 
         Topic name: /grace_proj/start
 
@@ -171,12 +152,30 @@ Note:
 ## Input specification:
 
 
+### (1) Grace Behavior Command Service: A ROS service that makes Grace exeute a particular behavior as specified. 
+
+        Service Name: /grace_proj/execute_behavior
+
+        Input Args:
+            string  command      #Text indicating the nature of this behavior command, for now we don't worry about this
+            string  utterance    #Text indicating the sentence Grace should say
+
+            string[] expressions #The sequence of facial expressions that should accompany the utterance
+            float32[] exp_start  #Start time (relative) of the facial expressions
+            float32[] exp_end    #End time (relative) of the facial expressions
+
+            string[] gestures    #The sequence of gestures that should accompany the utterance
+            float32[] ges_start  #Start time (relative) of the gestures
+            float32[] ges_end    #Start time (relative) of the gestures
 
 
+        Return Args:
+            string result        #Text indicating the outcome of this behavior execution
 
+Note: result could either be 
 
-
-
+    (1) "completed", meaning that Grace completed the execution without noticing any interruption 
+    or (2) "interrupted", meaning that Grace was interruped by her interlocutor and has to stop the speech execution as a reaction mid-way.
 
 
 
