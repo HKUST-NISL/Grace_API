@@ -24,7 +24,7 @@ Output specification:
 
 Sample: 
 
-    ![sentence sample](./sentence sample.png) 
+    ![sentence sample](./Images/sentence_sample.png) 
 
 
 (2) ASR Stream - Word: word stream reported by the asr module of Grace published to a ros topic - note that this stream could be unstable as ASR module is dynamically revising its judgements on words
@@ -47,7 +47,7 @@ Sample:
 
 Sample: (Note the revision of the word "see")
 
-    ![word sample](./word sample.png)
+    ![word sample](./Images/word_sample.png)
 
 
 
@@ -69,9 +69,9 @@ Sample: (Note the revision of the word "see")
 
             string audio_path   #Cached audio file path 
 
-Sample: (Note the revision of the word "see")
+Sample: (Note the growing, incomplete sentence)
 
-    ![interim speech](./interim speech.png)
+    ![interim speech](./Images/interim_speech_sample.png)
 
 
 
