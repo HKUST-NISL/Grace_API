@@ -24,7 +24,7 @@ Output specification:
 
         Sample: 
 
-            ![alt text](sentence sample.png) 
+            ![sentence sample](./sentence sample.png) 
 
 
 (2) ASR Stream - Word: word stream reported by the asr module of Grace published to a ros topic - note that this stream could be unstable as ASR module is dynamically revising its judgements on words
@@ -47,7 +47,7 @@ Output specification:
 
         Sample: (Note the revision of the word "see")
 
-            ![alt text](/word sample.png)
+            ![word sample](./word sample.png)
 
 
 
@@ -71,7 +71,7 @@ Output specification:
 
         Sample: (Note the revision of the word "see")
 
-            ![alt text](/interim speech.png)
+            ![interim speech](./interim speech.png)
 
 
 
