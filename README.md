@@ -122,7 +122,7 @@ Note:
 
 
 
-### (5) Flow Control Commands: Flags published to a ros topic by the GUI, which is operated by the developer to control the interaction.
+### (5) Flow Control Commands: Flags published to ros topics by the GUI, which is operated by the developer to control the interaction.
 
         Topic name: /grace_proj/start
 
@@ -179,9 +179,25 @@ Note: result could either be
 
 
 
+### (2) Grace Fallback Behavior Command: Command that controls fallback behaviors like nodding and aversion published to ros topics
 
 
+        Topic name: /grace_proj/toggle_nodding_topic
 
+        Message Type: std_msgs/Bool
+
+        Message Format:
+
+            bool data #When its value is true Grace will start nodding on a random basis
+
+
+        Topic name: /grace_proj/toggle_aversion
+
+        Message Type: std_msgs/Bool
+
+        Message Format:
+
+            bool data #When its value is true Grace will start to have aversions on a random basis
 
 
 
