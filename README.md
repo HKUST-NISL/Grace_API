@@ -53,7 +53,7 @@ Sample: (Note the revision of the word "see")\
 
 ### (3) ASR Stream (Sentence): Incomplete sentence stream reported by the asr module of Grace published to a ros topic - note that this stream grows as the ASR module listens and make judgements.
 
-        Topic name: /hr/perception/hear/words
+        Topic name: /hr/perception/hear/interim_speech
 
         Message Type: hr_msgs/ChatMessage
 
@@ -118,7 +118,7 @@ Note:
         "True" or "False"
 
     Possible emotion label:
-        The classifier uses 8-class emotion lable as output, i.e., {'Anger', 'Contempt', 'Disgust', 'Fear', 'Happiness', 'Neutral', 'Sadness', 'Surprise'}. However, in the output, {"Disgust", "Fear"} are relabled as "Agitation". 
+        The classifier uses 8-class emotion lable as output, i.e., {'Anger', 'Contempt', 'Disgust', 'Fear', 'Happiness', 'Neutral', 'Sadness', 'Surprise'}. However, in the output, {"Disgust", "Fear"} are relabled as "Agitation". If the target person's face is not detected, "Abscence" would be placed in the "emotion" field. When the target person is not tracked at all, "EXCEPTION!!" would be placed in the "emotion" field.
 
 
 
