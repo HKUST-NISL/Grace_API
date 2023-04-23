@@ -2,6 +2,7 @@ import yaml
 import rospy
 import os
 import re
+import threading
 
 import dynamic_reconfigure.client
 import sensor_msgs.msg
@@ -29,7 +30,8 @@ grace_api_configs = loadConfigs()
 class GraceAPI:
 
     __latest_word = ''
-
+    __latest_tts_event = ''
+    __behav_service_thread_keep_alive = True
 
 
 
@@ -58,7 +60,7 @@ class GraceAPI:
         self.tts_data_client = rospy.ServiceProxy(grace_api_configs['Ros']['tts_data_service'], hr_msgs.srv.TTSData)
         self.tts_say_client = rospy.ServiceProxy(grace_api_configs['Ros']['tts_say_service'], hr_msgs.srv.TTSTrigger)
         self.tts_control_pub = rospy.Publisher(grace_api_configs['Ros']['tts_control_topic'], std_msgs.msg.String, queue_size=grace_api_configs['Ros']['queue_size'])
-
+        self.tts_event_sub = rospy.Subscriber(grace_api_configs['Ros']['tts_event_topic'], std_msgs.msg.String, self.__ttsEventCallback, queue_size=grace_api_configs['Ros']['queue_size'])
 
         #For arm gesture
         self.arm_animation_pub = rospy.Publisher(grace_api_configs['Ros']['arm_animation_topic'], hr_msgs.msg.SetAnimation, queue_size=grace_api_configs['Ros']['queue_size'])
@@ -79,15 +81,15 @@ class GraceAPI:
     #   ASR-ROS-Helpers
     '''
     def __asrInit(self):
-        params = { 'enable': True, 'language': grace_api_configs['Ros']['cantonese_language_code'], 'alternative_language_codes': grace_api_configs['Ros']['english_language_code'], 'model': grace_api_configs['Ros']['asr_model'], 'continuous': True} 
+        params = { 'enable': True, 'language': grace_api_configs['Ros']['primary_language_code'], 'alternative_language_codes': grace_api_configs['Ros']['secondary_language_code'], 'model': grace_api_configs['Ros']['asr_model'], 'continuous': True} 
         self.asr_reconfig_client.update_configuration(params)
 
     def __reconfigArmAnimTransitionSpeed(self, speed):
         pass
 
     def __asrWordsCallback(self, msg):
-        __latest_word = msg.utterance
-        print('Latest ASR word: (%s).' % __latest_word)
+        self.__latest_word = msg.utterance
+        print('Latest ASR word: (%s).' % self.__latest_word)
 
 
 
@@ -133,8 +135,9 @@ class GraceAPI:
         #Call the service
         return self.tts_say_client(req)
 
-
-
+    def __ttsEventCallback(self, msg):
+        self.__latest_tts_event = msg.data
+        print('Latest TTS event is \"%s\".' % self.__latest_tts_event)
 
 
 
@@ -164,6 +167,9 @@ class GraceAPI:
         #Publish
         self.arm_animation_pub.publish(msg)
 
+    def __triggerArmAnimationFixedDur(self, name, dur):
+        self.__configArmAnimDur(dur)
+        self.__triggerArmAnimation(name)
 
 
 
@@ -171,7 +177,7 @@ class GraceAPI:
     '''
     #   Expression-ROS-Helpers
     '''
-    def __triggerFacialExpression(self, name, dur, magnitude = 0.5):
+    def __triggerExpressionFixedDur(self, name, dur, magnitude = 0.5):
         #Compose a message
         msg = hr_msgs.msg.SetExpression()
         msg.name = name
@@ -184,20 +190,103 @@ class GraceAPI:
 
 
 
+
     '''
     #   Interface
     '''
 
     def __handleGraceBehaviorServiceCall(self, req):
+        #Prepare response object
+        res = grace_attn_msgs.srv.GraceBehaviorResponse()
+        
+        #Get total duration of tts
+        dur_total = self.__parseTTSDur(self.__getTTSMeta(req.utterance, req.lang))
+
+        #Arrange expressions and gestures in physical time
+        expression_seq = self.__arrangeBehavSeq(dur_total, req.exp_start, req.exp_end)
+        gesture_seq = self.__arrangeBehavSeq(dur_total, req.ges_start, req.ges_end)
+
+        #Prepare two threads for executing expression and gestures
+        self.__behav_service_thread_keep_alive = True
+        exp_thread = threading.Thread(target=lambda: self.__execBehavSeq(expression_seq, self.__triggerExpressionFixedDur), daemon=False)
+        ges_thread = threading.Thread(target=lambda: self.__execBehavSeq(expression_seq, self.__triggerArmAnimationFixedDur), daemon=False)
+
+        #Will poll the tts event for flow control and the asr input in case there is any bardging in behavior
+        rate = rospy.Rate(grace_api_configs['Behavior']['bardging_in_monitor_rate'])
+        self.__latest_word = ''
+        self.__latest_tts_event = ''
+
+        #Initiate tts, gesture, expression and start polling
+        self.behavior_exec_start_time = rospy.get_time()
+        self.__say(req.utterance, req.lang)
+        exp_thread.start()
+        ges_thread.start()
+        while True:
+            rate.sleep()
+            if(self.__latest_word):#Someone said somthing when Grace is performing
+                print('Bardging in ddetected!')
+
+                #Stop behavior command execution completely
+                self.__stopAllBehviors()
+
+                #Report bardging in
+                res.result = grace_api_configs['Behavior']['bardging_string']
+
+                #Break the loop and finish the service
+                break
+            
+            else:#Nobody said anything, check the tts state
+                if(self.__latest_tts_event == grace_api_configs['Ros']['tts_end_event']):#TTS is over
+                    print('Successfully completed!')
+                    
+                    #Stop gesture and expressions
+                    self.__goToNeutral()
+
+                    #Report successful completion of the behaviour execution
+                    res.result = grace_api_configs['Behavior']['succ_string']
+
+                    #Break the loop and finish the service
+                    break
+
+                else:#TTS still going
+                    pass#Do nothing
+        return res
+
+
+
+
+
+    def __arrangeBehavSeq(self, total_dur, start_portion, end_portion):
         pass
+
+    def __execBehavSeq(self, seq, exec_fnc):
+        pass
+
+
+
 
     def __endOfConvCallback(self, msg):
-        pass
+        self.__stopAllBehviors()
 
 
 
+    def __stopAllBehviors(self):
+        #Cutoff any on-going tts
+        self.__stopTTS()
+        #Reset to neutral arm-pose and facial expression
+        self.__goToNeutral()
 
 
+    def __goToNeutral(self):
+        #Kill any on-going behaviour service thread
+        self.__behav_service_thread_keep_alive = False
+
+        #Reset to a neutral arm pose
+        self.__triggerArmAnimationFixedDur(grace_api_configs['Behavior']['neutral_pose_info']['name'],grace_api_configs['Behavior']['neutral_pose_info']['dur'])
+
+        #Reset to a neutral expression
+        self.__triggerExpressionFixedDur(grace_api_configs['Behavior']['neutral_expression_info']['name'],grace_api_configs['Behavior']['neutral_expression_info']['dur'],grace_api_configs['Behavior']['neutral_expression_info']['magnitude'])
+        
 
 
 
