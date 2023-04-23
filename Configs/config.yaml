@@ -14,6 +14,7 @@ Ros:
   tts_data_service: "/hr/control/speech/data"
   tts_say_service: "/hr/control/speech/tts"
   tts_control_topic: "/hr/control/speech/tts_control"
+  tts_stop_cmd: "shutup"
 
   arm_animation_topic: "/hr/animation/set_arm_animation"
   arm_animation_speed_reconfig: "/hr/animation/settings"

@@ -159,7 +159,7 @@ Note:
         Input Args:
             string  command      #Text indicating the nature of this behavior command, for now we don't worry about this
             string  utterance    #Text indicating the sentence Grace should say
-            string lang         #Language code
+            string  lang         #Language code
 
             string[] expressions #The sequence of facial expressions that should accompany the utterance
             float32[] exp_start  #Start time (relative) of the facial expressions
