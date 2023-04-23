@@ -32,7 +32,7 @@ class GraceAPI:
     __latest_word = ''
     __latest_tts_event = ''
     __behav_service_thread_keep_alive = True
-
+    __bardging_handling_on = False
 
 
     def __init__(self):
@@ -73,6 +73,8 @@ class GraceAPI:
         self.end_of_conv_sub = rospy.Subscriber(grace_api_configs['Ros']['end_of_conv_topic'], std_msgs.msg.Bool, self.__endOfConvCallback, queue_size=grace_api_configs['Ros']['queue_size'])
         self.grace_behavior_server = rospy.Service(grace_api_configs['Ros']['grace_behavior_service'], grace_attn_msgs.srv.GraceBehavior, self.__handleGraceBehaviorServiceCall)
 
+        #Some debug topic 
+        self.bardging_switch_sub = rospy.Subscriber(grace_api_configs['Debug']['bardging_in_switch_topic'],std_msgs.msg.Bool, self.__bardgingHandlingSwitchCallback, queue_size=grace_api_configs['Ros']['queue_size'])
 
 
 
@@ -81,6 +83,10 @@ class GraceAPI:
     #   ASR-ROS-Helpers
     '''
     def __asrInit(self):
+        #We turnofffirst
+        params = { 'enable': False} 
+        self.asr_reconfig_client.update_configuration(params)
+        #Then restart
         params = { 'enable': True, 'language': grace_api_configs['Ros']['primary_language_code'], 'alternative_language_codes': grace_api_configs['Ros']['secondary_language_code'], 'model': grace_api_configs['Ros']['asr_model'], 'continuous': True} 
         self.asr_reconfig_client.update_configuration(params)
 
@@ -167,9 +173,9 @@ class GraceAPI:
         #Publish
         self.arm_animation_pub.publish(msg)
 
-    def __triggerArmAnimationFixedDur(self, name, dur):
+    def __triggerArmAnimationFixedDur(self, name, dur, magnitude = 1.0):
         self.__configArmAnimDur(dur)
-        self.__triggerArmAnimation(name)
+        self.__triggerArmAnimation(str(name))
 
 
 
@@ -177,11 +183,12 @@ class GraceAPI:
     '''
     #   Expression-ROS-Helpers
     '''
-    def __triggerExpressionFixedDur(self, name, dur, magnitude = 0.5):
+    def __triggerExpressionFixedDur(self, name, dur, magnitude):
         #Compose a message
         msg = hr_msgs.msg.SetExpression()
-        msg.name = name
+        msg.name = str(name)
         msg.duration.secs = dur
+        msg.duration.nsecs = 0
         msg.magnitude = magnitude
 
         #Publish
@@ -195,21 +202,29 @@ class GraceAPI:
     #   Interface
     '''
 
+    def __bardgingHandlingSwitchCallback(self, msg):
+        self.__bardging_handling_on = msg.data
+        print("Barding handling is %s" % self.__bardging_handling_on)
+
+
     def __handleGraceBehaviorServiceCall(self, req):
+        #We don't need auto-generated expressions and gestures anymore
+        pure_text = grace_api_configs['Ros']['tts_pure_token'] + req.utterance
+
         #Prepare response object
         res = grace_attn_msgs.srv.GraceBehaviorResponse()
         
         #Get total duration of tts
-        dur_total = self.__parseTTSDur(self.__getTTSMeta(req.utterance, req.lang))
+        dur_total = self.__parseTTSDur(self.__getTTSMeta(pure_text, req.lang))
 
         #Arrange expressions and gestures in physical time
-        expression_seq = self.__arrangeBehavSeq(dur_total, req.exp_start, req.exp_end)
-        gesture_seq = self.__arrangeBehavSeq(dur_total, req.ges_start, req.ges_end)
+        expression_seq = self.__arrangeBehavSeq(dur_total, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
+        gesture_seq = self.__arrangeBehavSeq(dur_total, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
 
         #Prepare two threads for executing expression and gestures
         self.__behav_service_thread_keep_alive = True
         exp_thread = threading.Thread(target=lambda: self.__execBehavSeq(expression_seq, self.__triggerExpressionFixedDur), daemon=False)
-        ges_thread = threading.Thread(target=lambda: self.__execBehavSeq(expression_seq, self.__triggerArmAnimationFixedDur), daemon=False)
+        ges_thread = threading.Thread(target=lambda: self.__execBehavSeq(gesture_seq, self.__triggerArmAnimationFixedDur), daemon=False)
 
         #Will poll the tts event for flow control and the asr input in case there is any bardging in behavior
         rate = rospy.Rate(grace_api_configs['Behavior']['bardging_in_monitor_rate'])
@@ -218,12 +233,12 @@ class GraceAPI:
 
         #Initiate tts, gesture, expression and start polling
         self.behavior_exec_start_time = rospy.get_time()
-        self.__say(req.utterance, req.lang)
+        self.__say(pure_text, req.lang)
         exp_thread.start()
         ges_thread.start()
         while True:
             rate.sleep()
-            if(self.__latest_word):#Someone said somthing when Grace is performing
+            if(self.__bardging_handling_on and self.__latest_word):#Someone said somthing when Grace is performing
                 print('Bardging in ddetected!')
 
                 #Stop behavior command execution completely
@@ -253,14 +268,54 @@ class GraceAPI:
         return res
 
 
+    def __arrangeBehavSeq(self, total_dur, names, start_portion, end_portion, magnitude):
+        num_behav = len(names)
+
+
+        behav_seq = [None] * num_behav
+        for i in range(num_behav):
+            behav_seq[i] = [None] * 4 
+
+
+        for i in range(num_behav):
+            behav_seq[i][0] = names[i]
+            behav_seq[i][1] = start_portion[i] * total_dur
+            behav_seq[i][2] = end_portion[i] * total_dur
+            behav_seq[i][3] = magnitude[i]
+        return behav_seq
 
 
 
-    def __arrangeBehavSeq(self, total_dur, start_portion, end_portion):
-        pass
+    def __execBehavSeq(self, behav_seq, exec_fnc):
+        
+        num_behav = len(behav_seq)
+        
+        rate = rospy.Rate(grace_api_configs['Behavior']['behav_exec_rate'])
 
-    def __execBehavSeq(self, seq, exec_fnc):
-        pass
+        #The behaviour to be executed
+        exec_cnt = 0
+        #Total time since the start of thie performance command
+        elapsed_time = 0
+
+
+        while self.__behav_service_thread_keep_alive:
+            #Update the elapsed time
+            elapsed_time = rospy.get_time() - self.behavior_exec_start_time
+
+            if( exec_cnt < num_behav):# Start executing this behavior
+                if( elapsed_time >= behav_seq[exec_cnt][1]):
+                    print("Executing behavior %d: %s" % (exec_cnt , behav_seq[exec_cnt][0]))
+                    exec_fnc(behav_seq[exec_cnt][0], behav_seq[exec_cnt][2] - behav_seq[exec_cnt][1], behav_seq[exec_cnt][3])
+                    exec_cnt = exec_cnt + 1 
+            else:#Nothing more to execute
+                break
+
+            rate.sleep()
+
+
+
+
+
 
 
 

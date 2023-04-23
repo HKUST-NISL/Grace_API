@@ -6,7 +6,7 @@ Ros:
   cantonese_language_code: &id_lang_yue 'yue-Hant-HK' 
 
   primary_language_code: *id_lang_eng
-  secondary_language_code: *id_lang_yue
+  secondary_language_code: *id_lang_eng
 
   asr_words_topic: "/hr/perception/hear/words"
   asr_reconfig: "/hr/perception/speech_recognizer"
@@ -20,6 +20,7 @@ Ros:
   tts_event_topic: "/hr/control/speech/event"
   tts_stop_cmd: "shutup"
   tts_end_event: "stop"
+  tts_pure_token: '|p|'
 
   arm_animation_topic: "/hr/animation/set_arm_animation"
   arm_animation_speed_reconfig: "/hr/animation/settings"
@@ -43,19 +44,24 @@ Behavior:
     magnitude: 0
 
   bardging_in_monitor_rate: 30
+  behav_exec_rate: 30
 
   succ_string: "completed"
   bardging_string: "interrupted"
 
 Debug:
+  bardging_in_switch_topic: "/grace_proj/stop_bardging_handling"
+
   Sample:
     txt: "Hello, this is a test script and I will just count. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20."
-    lang: "en-US"
+    lang: *id_lang_eng
 
-    exp: ["happy","fear"]
+    expressions: ['happy','fear']
     exp_start: [0.1, 0.8]
     exp_end: [0.4, 0.9]
+    exp_mag: [0.8, 0.8]
 
-    ges: ["MAIN-1","MAIN-2","MAIN-1"]
+    gestures: ['MAIN-1','MAIN-2','MAIN-1']
     ges_start: [0.1, 0.4, 0.8]
     ges_end: [0.3, 0.5, 0.9] 
+    ges_mag: [1, 1, 1] 

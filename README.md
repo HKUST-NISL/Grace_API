@@ -164,10 +164,12 @@ Note:
             string[] expressions #The sequence of facial expressions that should accompany the utterance
             float32[] exp_start  #Start time (relative) of the facial expressions
             float32[] exp_end    #End time (relative) of the facial expressions
+            float32[] exp_mag    #The magnitude of expression, between 0 and 1
 
             string[] gestures    #The sequence of gestures that should accompany the utterance
             float32[] ges_start  #Start time (relative) of the gestures
             float32[] ges_end    #Start time (relative) of the gestures
+            float32[] ges_mag    #Not used
 
 
         Return Args:
