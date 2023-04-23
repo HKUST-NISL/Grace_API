@@ -45,6 +45,7 @@ class GraceAPI:
     def __mainLoop(self):
         rate = rospy.Rate(0.1)
         while(True):
+            # self.__triggerExpressionFixedDur('happy',3,0.8)
             rate.sleep()
 
 
@@ -187,9 +188,8 @@ class GraceAPI:
         #Compose a message
         msg = hr_msgs.msg.SetExpression()
         msg.name = str(name)
-        msg.duration.secs = dur
-        msg.duration.nsecs = 0
-        msg.magnitude = magnitude
+        msg.duration = rospy.Duration(dur,0)
+        msg.magnitude = float(magnitude)
 
         #Publish
         self.expression_pub.publish(msg)
@@ -305,7 +305,10 @@ class GraceAPI:
             if( exec_cnt < num_behav):# Start executing this behavior
                 if( elapsed_time >= behav_seq[exec_cnt][1]):
                     print("Executing behavior %d: %s" % (exec_cnt , behav_seq[exec_cnt][0]))
+
+                    print(type(behav_seq[exec_cnt][0]))
                     exec_fnc(behav_seq[exec_cnt][0], behav_seq[exec_cnt][2] - behav_seq[exec_cnt][1], behav_seq[exec_cnt][3])
+                    
                     exec_cnt = exec_cnt + 1 
             else:#Nothing more to execute
                 break
