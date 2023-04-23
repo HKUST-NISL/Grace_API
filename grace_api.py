@@ -37,7 +37,13 @@ class GraceAPI:
 
         self.__initRosConnection()
 
-        rospy.spin()
+        self.__mainLoop()
+
+
+    def __mainLoop(self):
+        rate = rospy.Rate(0.1)
+        while(True):
+            rate.sleep()
 
 
     def __initRosConnection(self):
@@ -66,6 +72,12 @@ class GraceAPI:
         self.grace_behavior_server = rospy.Service(grace_api_configs['Ros']['grace_behavior_service'], grace_attn_msgs.srv.GraceBehavior, self.__handleGraceBehaviorServiceCall)
 
 
+
+
+
+    '''
+    #   ASR-ROS-Helpers
+    '''
     def __asrInit(self):
         params = { 'enable': True, 'language': grace_api_configs['Ros']['cantonese_language_code'], 'alternative_language_codes': grace_api_configs['Ros']['english_language_code'], 'model': grace_api_configs['Ros']['asr_model'], 'continuous': True} 
         self.asr_reconfig_client.update_configuration(params)
@@ -73,11 +85,18 @@ class GraceAPI:
     def __reconfigArmAnimTransitionSpeed(self, speed):
         pass
 
-
     def __asrWordsCallback(self, msg):
         __latest_word = msg.utterance
         print('Latest ASR word: (%s).' % __latest_word)
 
+
+
+
+
+
+    '''
+    #   TTS-ROS-Helpers
+    '''
     def __getTTSMeta(self, text, lang = grace_api_configs['Ros']['english_language_code']):
         #Compose a request
         req = hr_msgs.srv.TTSDataRequest()
@@ -116,11 +135,68 @@ class GraceAPI:
 
 
 
+
+
+
+    '''
+    #   Gesture-ROS-Helpers
+    '''
+    def __configArmAnimDur(self, dur):
+        #The timing is only accurate for arm-animations from the MAIN pool, which is nothing but an 1-frame pose change
+
+        #Compare with min / max dur for safety
+        if(dur < grace_api_configs['Behavior']['arm_anim_min_dur'] ):
+            dur_rectified = grace_api_configs['Behavior']['arm_anim_min_dur'] 
+        else:
+            dur_rectified = dur
+
+        #Reconfigure HRSDK
+        params = { 'arm_animation_transition': dur_rectified } 
+        self.arm_animation_reconfig_client.update_configuration(params)
+
+    def __triggerArmAnimation(self, name, speed = 1.0, magnitude = 1.0):
+        #Compose a message
+        msg = hr_msgs.msg.SetAnimation()
+        msg.name = name
+        msg.speed = speed
+        msg.magnitude = magnitude
+
+        #Publish
+        self.arm_animation_pub.publish(msg)
+
+
+
+
+
+    '''
+    #   Expression-ROS-Helpers
+    '''
+    def __triggerFacialExpression(self, name, dur, magnitude = 0.5):
+        #Compose a message
+        msg = hr_msgs.msg.SetExpression()
+        msg.name = name
+        msg.duration.secs = dur
+        msg.magnitude = magnitude
+
+        #Publish
+        self.expression_pub.publish(msg)
+
+
+
+
+    '''
+    #   Interface
+    '''
+
     def __handleGraceBehaviorServiceCall(self, req):
         pass
 
     def __endOfConvCallback(self, msg):
         pass
+
+
+
+
 
 
 
