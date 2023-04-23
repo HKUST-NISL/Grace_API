@@ -32,7 +32,7 @@ class GraceAPI:
     __latest_word = ''
     __latest_tts_event = ''
     __behav_service_thread_keep_alive = True
-    __bardging_handling_on = False
+    __bardging_handling_on = True
 
 
     def __init__(self):
