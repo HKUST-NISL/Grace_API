@@ -1,0 +1,29 @@
+Ros:
+  node_name: "grace_api"
+  queue_size: 100
+
+  english_language_code: 'en-US'
+  cantonese_language_code: 'yue-Hant-HK'
+
+  asr_words_topic: "/hr/perception/hear/words"
+  asr_reconfig: "/hr/perception/speech_recognizer"
+  asr_continuous: true
+  asr_model: "phone_call"
+
+
+  tts_data_service: "/hr/control/speech/data"
+  tts_say_service: "/hr/control/speech/tts"
+  tts_control_topic: "/hr/control/speech/tts_control"
+
+  arm_animation_topic: "/hr/animation/set_arm_animation"
+  arm_animation_speed_reconfig: "/hr/animation/settings"
+  arm_transition_speed_param: "arm_animation_transition"
+
+  expression_topic: "/hr/animation/set_expression"
+
+  end_of_conv_topic: "/grace_proj/stop"
+  grace_behavior_service: "/grace_proj/execute_behavior_command"
+
+
+Behavior:
+  
