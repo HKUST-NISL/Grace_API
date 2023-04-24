@@ -169,7 +169,7 @@ Note:
             string[] gestures    #The sequence of gestures that should accompany the utterance
             float32[] ges_start  #Start time (relative) of the gestures
             float32[] ges_end    #Start time (relative) of the gestures
-            float32[] ges_mag    #Not used
+            float32[] ges_mag    #The magnitude of arm animation, between 0 and 1
 
 
         Return Args:

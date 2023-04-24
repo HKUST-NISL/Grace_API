@@ -65,7 +65,9 @@ class GraceAPI:
 
         #For arm gesture
         self.arm_animation_pub = rospy.Publisher(grace_api_configs['Ros']['arm_animation_topic'], hr_msgs.msg.SetAnimation, queue_size=grace_api_configs['Ros']['queue_size'])
-        self.arm_animation_reconfig_client = dynamic_reconfigure.client.Client(grace_api_configs['Ros']['arm_animation_speed_reconfig']) 
+        self.arm_animation_normal_length = rospy.ServiceProxy(grace_api_configs['Ros']['arm_animation_normal_length_service'], hr_msgs.srv.GetAnimationLength)
+        self.arm_animation_reconfig_client = dynamic_reconfigure.client.Client(grace_api_configs['Ros']['arm_animation_motor_speed_reconfig']) 
+        self.__configAnimationMotorSpeed(grace_api_configs['Behavior']['arm_anim_motor_transition_time'])
 
         #For factial expression
         self.expression_pub = rospy.Publisher(grace_api_configs['Ros']['expression_topic'], hr_msgs.msg.SetExpression, queue_size=grace_api_configs['Ros']['queue_size'])
@@ -151,20 +153,44 @@ class GraceAPI:
     '''
     #   Gesture-ROS-Helpers
     '''
-    def __configArmAnimDur(self, dur):
-        #The timing is only accurate for arm-animations from the MAIN pool, which is nothing but an 1-frame pose change
+    def __configAnimationMotorSpeed(self, state_transition_dur):
+        #This is the state transition time for the motor to achieve when going from one key frame to another key frame
 
-        #Compare with min / max dur for safety
-        if(dur < grace_api_configs['Behavior']['arm_anim_min_dur'] ):
-            dur_rectified = grace_api_configs['Behavior']['arm_anim_min_dur'] 
+        #Compare with min state transition for safety
+        if(state_transition_dur < grace_api_configs['Behavior']['arm_anim_min_motor_transition_time'] ):
+            state_transition_dur_rectified = grace_api_configs['Behavior']['arm_anim_min_motor_transition_time'] 
         else:
-            dur_rectified = dur
+            state_transition_dur_rectified = state_transition_dur
 
         #Reconfigure HRSDK
-        params = { 'arm_animation_transition': dur_rectified } 
+        params = { 'arm_animation_transition': state_transition_dur_rectified } 
         self.arm_animation_reconfig_client.update_configuration(params)
 
-    def __triggerArmAnimation(self, name, speed = 1.0, magnitude = 1.0):
+
+
+    def __queryArmAnimationNormalLength(self, name):
+        #Compose a request
+        req = hr_msgs.srv.GetAnimationLengthRequest()
+        req.animation = name
+
+        res = self.arm_animation_normal_length(req)
+
+        #Return the normal playback duration at playback speed 1
+        return res.length
+
+    def __calcArmAnimationPlaybackSpeed(self, normal_dur, dur_in):
+        #The playback duration should be NO LESS than motor state transition duration
+        if(dur_in < grace_api_configs['Behavior']['arm_anim_min_motor_transition_time'] ):
+            dur_rectified = grace_api_configs['Behavior']['arm_anim_min_motor_transition_time'] 
+        else:
+            dur_rectified = dur_in
+        #Compute playback speed that will achieve this duration
+        playback_speed_ratio = normal_dur / dur_rectified
+
+        return playback_speed_ratio
+
+
+    def __triggerArmAnimation(self, name, speed, magnitude):
         #Compose a message
         msg = hr_msgs.msg.SetAnimation()
         msg.name = name
@@ -174,9 +200,15 @@ class GraceAPI:
         #Publish
         self.arm_animation_pub.publish(msg)
 
-    def __triggerArmAnimationFixedDur(self, name, dur, magnitude = 1.0):
-        self.__configArmAnimDur(dur)
-        self.__triggerArmAnimation(str(name))
+
+    def __triggerArmAnimationFixedDur(self, name, dur, magnitude):
+        #Normal duration with playback speed 1 - NOT MOTOR SPEED
+        normal_dur = self.__queryArmAnimationNormalLength(name)
+
+        #Compute the speed to reach the animation duration specified in the input
+        playback_speed_ratio = self.__calcArmAnimationPlaybackSpeed(normal_dur, dur)
+
+        self.__triggerArmAnimation(str(name), playback_speed_ratio, magnitude)
 
 
 
@@ -340,7 +372,7 @@ class GraceAPI:
         self.__behav_service_thread_keep_alive = False
 
         #Reset to a neutral arm pose
-        self.__triggerArmAnimationFixedDur(grace_api_configs['Behavior']['neutral_pose_info']['name'],grace_api_configs['Behavior']['neutral_pose_info']['dur'])
+        self.__triggerArmAnimationFixedDur(grace_api_configs['Behavior']['neutral_pose_info']['name'],grace_api_configs['Behavior']['neutral_pose_info']['dur'],grace_api_configs['Behavior']['neutral_pose_info']['magnitude'])
 
         #Reset to a neutral expression
         self.__triggerExpressionFixedDur(grace_api_configs['Behavior']['neutral_expression_info']['name'],grace_api_configs['Behavior']['neutral_expression_info']['dur'],grace_api_configs['Behavior']['neutral_expression_info']['magnitude'])

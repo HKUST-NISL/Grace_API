@@ -23,7 +23,8 @@ Ros:
   tts_pure_token: '|p|'
 
   arm_animation_topic: "/hr/animation/set_arm_animation"
-  arm_animation_speed_reconfig: "/hr/animation/settings"
+  arm_animation_normal_length_service: "/hr/animation/get_arm_animation_length"
+  arm_animation_motor_speed_reconfig: "/hr/animation/settings"
 
   expression_topic: "/hr/animation/set_expression"
 
@@ -32,11 +33,13 @@ Ros:
 
 
 Behavior:
-  arm_anim_min_dur: 0.5
+  arm_anim_min_motor_transition_time: 1.0
+  arm_anim_motor_transition_time: 2.0
 
   neutral_pose_info:
     name: "MAIN-1"
     dur: 4
+    magnitude: 1.0
 
   neutral_expression_info:
     name: "happy"
@@ -48,6 +51,7 @@ Behavior:
 
   succ_string: "completed"
   bardging_string: "interrupted"
+
 
 Debug:
   bardging_in_switch_topic: "/grace_proj/stop_bardging_handling"
@@ -61,7 +65,7 @@ Debug:
     exp_end: [0.4, 0.9]
     exp_mag: [0.8, 0.8]
 
-    gestures: ['MAIN-1','MAIN-2','MAIN-1']
+    gestures: ['MAIN-OOPS','MAIN-2','MAIN-1']
     ges_start: [0.1, 0.4, 0.8]
     ges_end: [0.3, 0.5, 0.9] 
     ges_mag: [1, 1, 1] 
