@@ -271,13 +271,13 @@ class GraceAPI:
         while True:
             rate.sleep()
             if(self.__bardging_handling_on and self.__latest_word):#Someone said somthing when Grace is performing
-                print('Bardging in ddetected!')
+                print('Bardging in detected!')
 
                 #Stop behavior command execution completely
                 self.__stopAllBehviors()
 
                 #Report bardging in
-                res.result = grace_api_configs['Behavior']['bardging_string']
+                res.result = grace_api_configs['Behavior']['behav_bardging_string']
 
                 #Break the loop and finish the service
                 break
@@ -290,7 +290,7 @@ class GraceAPI:
                     self.__goToNeutral()
 
                     #Report successful completion of the behaviour execution
-                    res.result = grace_api_configs['Behavior']['succ_string']
+                    res.result = grace_api_configs['Behavior']['behav_succ_string']
 
                     #Break the loop and finish the service
                     break

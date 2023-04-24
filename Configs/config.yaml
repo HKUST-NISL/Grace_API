@@ -49,8 +49,8 @@ Behavior:
   bardging_in_monitor_rate: 30
   behav_exec_rate: 30
 
-  succ_string: "completed"
-  bardging_string: "interrupted"
+  behav_succ_string: "completed"
+  behav_bardging_string: "interrupted"
 
 
 Debug:
