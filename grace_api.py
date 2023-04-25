@@ -3,6 +3,8 @@ import rospy
 import os
 import re
 import threading
+from signal import signal
+from signal import SIGINT
 
 import dynamic_reconfigure.client
 import sensor_msgs.msg
@@ -228,8 +230,6 @@ class GraceAPI:
 
 
 
-
-
     '''
     #   Interface
     '''
@@ -240,11 +240,28 @@ class GraceAPI:
 
 
     def __handleGraceBehaviorServiceCall(self, req):
-        #We don't need auto-generated expressions and gestures anymore
-        pure_text = grace_api_configs['Ros']['tts_pure_token'] + req.utterance
-
         #Prepare response object
         res = grace_attn_msgs.srv.GraceBehaviorResponse()
+
+        if(req.command == grace_api_configs['Behavior']['behav_exec_cmd']):
+            res = self.__execBehavior(req,res)
+        elif(req.command == grace_api_configs['Behavior']['behav_stop_cmd']):
+            res = self.__stopBehavior(req,res)
+        else:
+            print("Unexpected behavior command %s." % req.command)
+
+        return res
+
+
+    def __stopBehavior(self, req, res):
+        self.__stopAllBehviors()
+        res.result = grace_api_configs['Behavior']['behav_stopped_string']
+        return res
+
+
+    def __execBehavior(self, req, res):
+        #We don't need auto-generated expressions and gestures anymore
+        pure_text = grace_api_configs['Ros']['tts_pure_token'] + req.utterance
         
         #Get total duration of tts
         dur_total = self.__parseTTSDur(self.__getTTSMeta(pure_text, req.lang))
@@ -378,9 +395,16 @@ class GraceAPI:
         self.__triggerExpressionFixedDur(grace_api_configs['Behavior']['neutral_expression_info']['name'],grace_api_configs['Behavior']['neutral_expression_info']['dur'],grace_api_configs['Behavior']['neutral_expression_info']['magnitude'])
         
 
-
+def handle_sigint(signalnum, frame):
+    # terminate
+    print('Main interrupted! Exiting.')
+    sys.exit()
 
 if __name__ == '__main__':
+
+    signal(SIGINT, handle_sigint)
+
+
     grace_api = GraceAPI()
 
 

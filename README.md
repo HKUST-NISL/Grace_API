@@ -175,11 +175,18 @@ Note:
         Return Args:
             string result        #Text indicating the outcome of this behavior execution
 
-Note: result could either be 
+Note: 
+
+    "command" could either be
+    (1) "exec", meaning to execute a defined behavior
+    or (2) "stop", meaning to force stop any on-going behaviors
+
+
+    "result" could either be 
 
     (1) "completed", meaning that Grace completed the execution without noticing any interruption 
-    or (2) "interrupted", meaning that Grace was interruped by her interlocutor and has to stop the speech execution as a reaction mid-way.
-
+    (2) "interrupted", meaning that Grace was interruped by her interlocutor and has to stop the speech execution as a reaction mid-way.
+    or(3) "stopped", meaning the stop behavior command has been executed.
 
 
 ### (2) Grace Fallback Behavior Command: Command that controls fallback behaviors like nodding and aversion published to ros topics

@@ -33,6 +33,10 @@ Ros:
 
 
 Behavior:
+  behav_exec_cmd: "exec"
+  behav_stop_cmd: "stop"
+
+
   arm_anim_min_motor_transition_time: 1.0
   arm_anim_motor_transition_time: 2.0
 
@@ -51,6 +55,7 @@ Behavior:
 
   behav_succ_string: "completed"
   behav_bardging_string: "interrupted"
+  behav_stopped_string: "stopped"
 
 
 Debug:

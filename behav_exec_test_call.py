@@ -35,6 +35,7 @@ if __name__ == '__main__':
 
     #Prepare a service request
     req = grace_attn_msgs.srv.GraceBehaviorRequest()
+    req.command = grace_api_configs['Behavior']['behav_exec_cmd']
     req.utterance = grace_api_configs['Debug']['Sample']['txt']
     req.lang = grace_api_configs['Debug']['Sample']['lang']
 
