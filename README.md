@@ -189,7 +189,7 @@ Note:
     or(3) "stopped", meaning the stop behavior command has been executed.
 
 
-### (2) Grace Fallback Behavior Command: Command that controls fallback behaviors like nodding and aversion published to ros topics
+### (2) Grace Keepalive Behavior Command: Command that controls fallback behaviors like nodding and aversion published to ros topics
 
 
         Topic name: /grace_proj/toggle_nodding_topic
@@ -198,7 +198,7 @@ Note:
 
         Message Format:
 
-            bool data #When its value is true Grace will start nodding on a random basis
+            bool data #When its value is true Grace will nod once using a randomly picked nod animation
 
 
         Topic name: /grace_proj/toggle_aversion
