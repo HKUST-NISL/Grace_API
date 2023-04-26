@@ -32,6 +32,11 @@ grace_api_configs = loadConfigs()
 class GraceAPI:
 
     __latest_word = ''
+
+    __start_faking = False
+    __latest_interim = None
+    __latest_interim_time_stamp = 0
+
     __latest_tts_event = ''
     __behav_service_thread_keep_alive = True
     __bardging_handling_on = True
@@ -56,6 +61,8 @@ class GraceAPI:
         
         #For configuring and monitoring asr
         self.asr_words_sub = rospy.Subscriber(grace_api_configs['Ros']['asr_words_topic'], hr_msgs.msg.ChatMessage, self.__asrWordsCallback, queue_size=grace_api_configs['Ros']['queue_size'])
+        self.asr_interim_sub = rospy.Subscriber(grace_api_configs['Ros']['asr_interim_speech_topic'], hr_msgs.msg.ChatMessage, self.__asrInterimCallback, queue_size=grace_api_configs['Ros']['queue_size'])
+        self.asr_fake_sentence_pub = rospy.Publisher(grace_api_configs['Ros']['asr_fake_sentence_topic'], hr_msgs.msg.ChatMessage, queue_size=grace_api_configs['Ros']['queue_size'])
         self.asr_reconfig_client = dynamic_reconfigure.client.Client(grace_api_configs['Ros']['asr_reconfig']) 
         self.__asrInit()
 
@@ -88,19 +95,53 @@ class GraceAPI:
     #   ASR-ROS-Helpers
     '''
     def __asrInit(self):
-        #We turnofffirst
+        #We turn off first
         params = { 'enable': False} 
         self.asr_reconfig_client.update_configuration(params)
         #Then restart
         params = { 'enable': True, 'language': grace_api_configs['Ros']['primary_language_code'], 'alternative_language_codes': grace_api_configs['Ros']['secondary_language_code'], 'model': grace_api_configs['Ros']['asr_model'], 'continuous': True} 
         self.asr_reconfig_client.update_configuration(params)
+        #Start the fake sentence generator
+        self.__fake_sentence_thread = threading.Thread(target = self.__fakeSentenceThread, daemon=False)
+        self.__fake_sentence_thread.start()
+
+
 
     def __reconfigArmAnimTransitionSpeed(self, speed):
         pass
 
     def __asrWordsCallback(self, msg):
         self.__latest_word = msg.utterance
-        print('Latest ASR word: (%s).' % self.__latest_word)
+        # print('Latest ASR word: (%s).' % self.__latest_word)
+
+    def __asrInterimCallback(self, msg):
+        #Receive the latest asr string
+        self.__latest_interim = msg
+        print('New interim is %s' %{self.__latest_interim.utterance})
+
+        #Upon receiving a new interim sentence, we update the timestamp and start faking sentences
+        self.__start_faking = True
+        self.__latest_interim_time_stamp = rospy.get_time()
+        
+
+    def __fakeSentenceThread(self):
+        rate = rospy.Rate(grace_api_configs['Ros']['asr_fake_sentence_check_rate'])
+
+        while True:
+            rate.sleep()
+
+            if( self.__start_faking ):#If we have started to fake a sentence
+                #Check the timestamp of the latest interim speech
+                if( rospy.get_time() - self.__latest_interim_time_stamp >= grace_api_configs['Ros']['asr_fake_sentence_window'] ):
+                    #Publish a fake sentence  
+                    self.asr_fake_sentence_pub.publish(self.__latest_interim)
+
+                    #Log
+                    print('Publishing FAKE asr sentence %s' % {self.__latest_interim.utterance})
+
+                    #Reset the fields
+                    self.__start_faking = False
+                    self.__latest_interim = None
 
 
 

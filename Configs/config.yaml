@@ -9,9 +9,13 @@ Ros:
   secondary_language_code: *id_lang_eng
 
   asr_words_topic: "/hr/perception/hear/words"
+  asr_interim_speech_topic: "/hr/perception/hear/interim_speech"
+  asr_fake_sentence_topic: "/hr/perception/hear/fake_sentence"
+  asr_fake_sentence_check_rate: 30
+  asr_fake_sentence_window: 1
   asr_reconfig: "/hr/perception/speech_recognizer"
   asr_continuous: true
-  asr_model: "phone_call"
+  asr_model: "latest_long"
 
 
   tts_data_service: "/hr/control/speech/data"
