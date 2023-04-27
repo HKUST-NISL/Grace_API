@@ -31,11 +31,12 @@ grace_api_configs = loadConfigs()
 
 class GraceAPI:
 
-    __latest_word = ''
+    __latest_word = ''#Not used
 
     __start_faking = False
     __latest_interim = None
     __latest_interim_time_stamp = 0
+    __latest_interim_for_bardging_in = ''
 
     __latest_tts_event = ''
     __behav_service_thread_keep_alive = True
@@ -112,12 +113,13 @@ class GraceAPI:
 
     def __asrWordsCallback(self, msg):
         self.__latest_word = msg.utterance
-        # print('Latest ASR word: (%s).' % self.__latest_word)
+        print('Latest WORD: (%s).' % self.__latest_word)
 
     def __asrInterimCallback(self, msg):
         #Receive the latest asr string
         self.__latest_interim = msg
-        print('New interim is %s' %{self.__latest_interim.utterance})
+        self.__latest_interim_for_bardging_in = self.__latest_interim.utterance
+        print('Latest INTERIM %s' %{self.__latest_interim.utterance})
 
         #Upon receiving a new interim sentence, we update the timestamp and start faking sentences
         self.__start_faking = True
@@ -318,7 +320,7 @@ class GraceAPI:
 
         #Will poll the tts event for flow control and the asr input in case there is any bardging in behavior
         rate = rospy.Rate(grace_api_configs['Behavior']['bardging_in_monitor_rate'])
-        self.__latest_word = ''
+        self.__latest_interim_for_bardging_in = ''
         self.__latest_tts_event = ''
 
         #Initiate tts, gesture, expression and start polling
@@ -328,8 +330,8 @@ class GraceAPI:
         ges_thread.start()
         while True:
             rate.sleep()
-            if(self.__bardging_handling_on and self.__latest_word):#Someone said somthing when Grace is performing
-                print('Bardging in detected!')
+            if(self.__bardging_handling_on and self.__latest_interim_for_bardging_in):#Someone said somthing when Grace is performing
+                print('Bardging in detected due to interim %s!' % self.__latest_interim_for_bardging_in)
 
                 #Stop behavior command execution completely
                 self.__stopAllBehviors()

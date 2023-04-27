@@ -5,8 +5,8 @@ Ros:
   english_language_code: &id_lang_eng 'en-US' 
   cantonese_language_code: &id_lang_yue 'yue-Hant-HK' 
 
-  primary_language_code: *id_lang_eng
-  secondary_language_code: *id_lang_eng
+  primary_language_code: *id_lang_yue
+  secondary_language_code: *id_lang_yue
 
   asr_words_topic: "/hr/perception/hear/words"
   asr_interim_speech_topic: "/hr/perception/hear/interim_speech"
