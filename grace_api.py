@@ -21,7 +21,7 @@ import std_msgs
 #Load configs
 def loadConfigs():
     #Load configs
-    with open("./Configs/config.yaml", "r") as config_file:
+    with open("./config/config.yaml", "r") as config_file:
         grace_api_configs = yaml.load(config_file, Loader=yaml.FullLoader)
         print("Read successful")
     return grace_api_configs
@@ -100,7 +100,7 @@ class GraceAPI:
         params = { 'enable': False} 
         self.asr_reconfig_client.update_configuration(params)
         #Then restart
-        params = { 'enable': True, 'language': grace_api_configs['Ros']['primary_language_code'], 'alternative_language_codes': grace_api_configs['Ros']['secondary_language_code'], 'model': grace_api_configs['Ros']['asr_model'], 'continuous': True} 
+        params = { 'enable': True, 'language': grace_api_configs['Ros']['primary_language_code'], 'alternative_language_codes': grace_api_configs['Ros']['secondary_language_code'], 'model': grace_api_configs['Ros']['asr_model'], 'continuous': grace_api_configs['Ros']['asr_continuous']} 
         self.asr_reconfig_client.update_configuration(params)
         #Start the fake sentence generator
         self.__fake_sentence_thread = threading.Thread(target = self.__fakeSentenceThread, daemon=False)
@@ -375,7 +375,6 @@ class GraceAPI:
             behav_seq[i][2] = end_portion[i] * total_dur
             behav_seq[i][3] = magnitude[i]
         return behav_seq
-
 
 
     def __execBehavSeq(self, behav_seq, exec_fnc):

@@ -14,7 +14,7 @@ Ros:
   asr_fake_sentence_check_rate: 30
   asr_fake_sentence_window: 1
   asr_reconfig: "/hr/perception/speech_recognizer"
-  asr_continuous: true
+  asr_continuous: false
   asr_model: "latest_long"
 
 
