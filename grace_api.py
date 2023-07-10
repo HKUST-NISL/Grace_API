@@ -89,8 +89,9 @@ class GraceAPI:
         #Some debug topic 
         self.bardging_switch_sub = rospy.Subscriber(grace_api_configs['Debug']['bardging_in_switch_topic'],std_msgs.msg.Bool, self.__bardgingHandlingSwitchCallback, queue_size=grace_api_configs['Ros']['queue_size'])
 
-
-
+        #tmp camera angle
+        self.__cam_ang_sub = rospy.Subscriber("/grace_proj/set_cam_angle", std_msgs.msg.Float32, self.__cameraAngCallback, queue_size=grace_api_configs['Ros']['queue_size'])
+        self.__cam_cfg_client = dynamic_reconfigure.client.Client('/hr/perception/camera_angle')
 
     '''
     #   ASR-ROS-Helpers
@@ -271,6 +272,20 @@ class GraceAPI:
         #Publish
         self.expression_pub.publish(msg)
 
+
+
+    #Camear angle
+    def __cameraAngCallback(self, msg):
+        self.setCameraAngle(msg.data)
+        
+    def setCameraAngle(self, angle):
+		#tilt chest cam to a given angle
+        try:
+            print("Configuring camera angle to %f." % angle)
+
+            self.__cam_cfg_client.update_configuration({"motor_angle":angle})
+        except Exception as e:
+            print(e)
 
 
     '''
